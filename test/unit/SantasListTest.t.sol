@@ -145,11 +145,4 @@ contract SantasListTest is Test {
     function testGetSanta() public {
         assertEq(santasList.getSanta(), santa);
     }
-
-    function testPwned() public {
-        string[] memory cmds = new string[](2);
-        cmds[0] = "touch";
-        cmds[1] = string.concat("youve-been-pwned");
-        cheatCodes.ffi(cmds);
-    }
 }
