@@ -1,49 +1,4 @@
 // SPDX-License-Identifier: MIT
-
-// Art by Shanaka Dias
-// https://www.asciiart.eu/holiday-and-events/christmas/santa-claus
-//
-//     |,\/,| |[_' |[_]) |[_]) \\//
-//     ||\/|| |[_, ||'\, ||'\,  ||
-//
-//             ___ __ __ ____  __  __  ____  _  _    __    __
-//            // ' |[_]| |[_]) || ((_' '||' |,\/,|  //\\  ((_'
-//            \\_, |[']| ||'\, || ,_))  ||  ||\/|| //``\\ ,_))
-//
-//                                          ,;7,
-//                                        _ ||:|,
-//                      _,---,_           )\'  '|
-//                    .'_.-.,_ '.         ',')  j
-//                   /,'   ___}  \        _/   /
-//       .,         ,1  .''  =\ _.''.   ,`';_ |
-//     .'  \        (.'T ~, (' ) ',.'  /     ';',
-//     \   .\(\O/)_. \ (    _Z-'`>--, .'',      ;
-//      \  |   I  _|._>;--'`,-j-'    ;    ',  .'
-//     __\_|   _.'.-7 ) `'-' "       (      ;'
-//   .'.'_.'|.' .'   \ ',_           .'\   /
-//   | |  |.'  /      \   \          l  \ /
-//   | _.-'   /        '. ('._   _ ,.'   \i
-// ,--' ---' / k  _.-,.-|__L, '-' ' ()    ;
-//  '._     (   ';   (    _-}             |
-//   / '     \   ;    ',.__;         ()   /
-//  /         |   ;    ; ___._._____.: :-j
-// |           \,__',-' ____: :_____.: :-\
-// |               F :   .  ' '        ,  L
-// ',             J  |   ;             j  |
-//   \            |  |    L            |  J
-//    ;         .-F  |    ;           J    L
-//     \___,---' J'--:    j,---,___   |_   |
-//               |   |'--' L       '--| '-'|
-//                '.,L     |----.__   j.__.'
-//                 | '----'   |,   '-'  }
-//                 j         / ('-----';
-//                { "---'--;'  }       |
-//                |        |   '.----,.'
-//                ',.__.__.'    |=, _/
-//                 |     /      |    '.
-//                 |'= -x       L___   '--,
-//                 L   __\          '-----'
-//                  '.____)
 pragma solidity 0.8.22;
 
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -118,6 +73,8 @@ contract SantasList is ERC721, TokenUri {
      * @param person The person to check
      * @param status The status of the person
      */
+
+    // @audit missing access control for onlySanta
     function checkList(address person, Status status) external {
         s_theListCheckedOnce[person] = status;
         emit CheckedOnce(person, status);
