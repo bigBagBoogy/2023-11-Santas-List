@@ -15,6 +15,7 @@ contract SantaToken is ERC20 {
     address private immutable i_santasList;
 
     constructor(address santasList) ERC20("SantaToken", "SANTA", DECIMALS) {
+        // @audit lacks a zero-check on i_santasList (slither doesn't like it)
         i_santasList = santasList;
     }
 

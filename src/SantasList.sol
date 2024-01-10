@@ -126,6 +126,10 @@ contract SantasList is ERC721, TokenUri {
      * @notice Buy a present for someone else. This should only be callable by anyone with SantaTokens.
      * @dev You'll first need to approve the SantasList contract to spend your SantaTokens.
      */
+    // @audit possible Reentrancy? (slither)
+    // q buyPresenttakes a present receiver but the minting still is to msg.sender so
+    // when you call this funtion for alice, you'd still be the msg.sender and thus you'd
+    // be receiving alice's present.
     function buyPresent(address presentReceiver) external {
         i_santaToken.burn(presentReceiver);
         _mintAndIncrement();

@@ -3,7 +3,7 @@ pragma solidity 0.8.22;
 
 import {SantasList} from "../../src/SantasList.sol";
 import {SantaToken} from "../../src/SantaToken.sol";
-import {Test} from "forge-std/Test.sol";
+import {Test, console2} from "forge-std/Test.sol";
 import {_CheatCodes} from "../mocks/CheatCodes.t.sol";
 
 contract SantasListTest is Test {
@@ -11,6 +11,7 @@ contract SantasListTest is Test {
     SantaToken santaToken;
 
     address user = makeAddr("user");
+    address barbara = makeAddr("barbara");
     address santa = makeAddr("santa");
     _CheatCodes cheatCodes = _CheatCodes(HEVM_ADDRESS);
 
@@ -25,6 +26,26 @@ contract SantasListTest is Test {
         vm.prank(santa);
         santasList.checkList(user, SantasList.Status.NICE);
         assertEq(uint256(santasList.getNaughtyOrNiceOnce(user)), uint256(SantasList.Status.NICE));
+    }
+
+    function testBarbaraIsNAUGHTY() public {
+        vm.prank(santa);
+        santasList.checkList(barbara, SantasList.Status.NAUGHTY);
+        if (uint256(santasList.getNaughtyOrNiceOnce(barbara)) == 2) {
+            console2.log("BARBARA IS NAUGHTY");
+        }
+        assertEq(uint256(santasList.getNaughtyOrNiceOnce(barbara)), uint256(SantasList.Status.NAUGHTY));
+    }
+
+    function testBarbaraCannotMint() public {
+        vm.prank(santa);
+        santasList.checkList(barbara, SantasList.Status.NAUGHTY);
+        vm.warp(santasList.CHRISTMAS_2023_BLOCK_TIME() + 1);
+        // naughty barbara is going to try and mint an NFT
+        vm.expectRevert();
+        vm.prank(barbara);
+        santasList.collectPresent();
+        console2.log(uint256(santasList.getNaughtyOrNiceTwice(barbara)));
     }
 
     function testCheckListTwice() public {
@@ -144,5 +165,29 @@ contract SantasListTest is Test {
 
     function testGetSanta() public {
         assertEq(santasList.getSanta(), santa);
+    }
+
+    /////  Segurigor  Tests    /////
+
+    function testBuyingOthersPresentsWillGiveBuyerPresent() public {
+        // if Santa did not check twice, The user does not have 2 token
+        // if the user does not have 2 token it can not burn them in the `buyPresent()` function
+        // This will stop execution, so no present will be minted
+
+        vm.startPrank(santa);
+        santasList.checkList(user, SantasList.Status.EXTRA_NICE);
+        santasList.checkTwice(user, SantasList.Status.EXTRA_NICE);
+        vm.stopPrank();
+
+        vm.warp(santasList.CHRISTMAS_2023_BLOCK_TIME() + 1);
+        assertEq(santaToken.balanceOf(user), 2);
+
+        vm.startPrank(user);
+        santaToken.approve(address(santasList), 1e18);
+        santasList.collectPresent();
+        santasList.buyPresent(user);
+        assertEq(santasList.balanceOf(user), 2);
+        assertEq(santaToken.balanceOf(user), 0);
+        vm.stopPrank();
     }
 }
