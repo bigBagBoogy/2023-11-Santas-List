@@ -12,6 +12,7 @@ contract SantasListTest is Test {
 
     address user = makeAddr("user");
     address barbara = makeAddr("barbara");
+    address maarten = makeAddr("maarten");
     address santa = makeAddr("santa");
     _CheatCodes cheatCodes = _CheatCodes(HEVM_ADDRESS);
 
@@ -20,6 +21,14 @@ contract SantasListTest is Test {
         santasList = new SantasList();
         santaToken = SantaToken(santasList.getSantaToken());
         vm.stopPrank();
+    }
+
+    modifier maartenIsExtraNice() {
+        vm.startPrank(santa);
+        santasList.checkList(maarten, SantasList.Status.EXTRA_NICE);
+        santasList.checkTwice(maarten, SantasList.Status.EXTRA_NICE);
+        vm.stopPrank();
+        _;
     }
 
     function testCheckList() public {
@@ -178,16 +187,38 @@ contract SantasListTest is Test {
         santasList.checkList(user, SantasList.Status.EXTRA_NICE);
         santasList.checkTwice(user, SantasList.Status.EXTRA_NICE);
         vm.stopPrank();
+        // this puts out 1   for EXTRA_NICE
+        assertEq(uint256(santasList.getNaughtyOrNiceTwice(user)), uint256(SantasList.Status.EXTRA_NICE));
 
         vm.warp(santasList.CHRISTMAS_2023_BLOCK_TIME() + 1);
-        assertEq(santaToken.balanceOf(user), 2);
 
         vm.startPrank(user);
-        santaToken.approve(address(santasList), 1e18);
         santasList.collectPresent();
-        santasList.buyPresent(user);
+        assertEq(santasList.balanceOf(user), 1); // nft
+        assertEq(santaToken.balanceOf(user), 1e18); // 1 token
+
+        // now user will call `buyPresent()`for barbara,
+        // but this fails, because this functions internally tries
+        // to burn barbara's token in stead of the user's token.
+        // You'll first need to approve the SantasList contract to spend your SantaTokens.
+        santaToken.approve(address(santasList), 1e18);
+        santasList.buyPresent(barbara);
+        // assertEq(santaToken.balanceOf(user), 0);
         assertEq(santasList.balanceOf(user), 2);
-        assertEq(santaToken.balanceOf(user), 0);
+
+        // santasList.collectPresent();
+        // santasList.buyPresent(user);
+
+        // assertEq(santaToken.balanceOf(user), 0);  // token
         vm.stopPrank();
+    }
+
+    function testMaartenCanMintHimselfAnNFTAtBabarasExpense() public maartenIsExtraNice {
+        assertEq(uint256(santasList.getNaughtyOrNiceTwice(maarten)), uint256(SantasList.Status.EXTRA_NICE));
+        vm.warp(santasList.CHRISTMAS_2023_BLOCK_TIME() + 1);
+        // it's christmas and maarten is extra nice, but he will do
+        // an evil deed nontheless...
+        vm.deal(barbara, 2e18); // this does not seem to work
+        console2.log("barbara has: ", santaToken.balanceOf(barbara));
     }
 }

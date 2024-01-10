@@ -1,6 +1,7 @@
 # What is the entry point of the contract?
 a - adding a person to the `s_theListCheckedOnce` mapping
 santasList::checkList(address person, Status status)  does this
+b - same as a, but now `s_theListCheckedTwice`
 
 
 # invariants:
