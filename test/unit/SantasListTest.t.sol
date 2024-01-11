@@ -28,6 +28,20 @@ contract SantasListTest is Test {
         santasList.checkList(maarten, SantasList.Status.EXTRA_NICE);
         santasList.checkTwice(maarten, SantasList.Status.EXTRA_NICE);
         vm.stopPrank();
+        vm.warp(santasList.CHRISTMAS_2023_BLOCK_TIME() + 1);
+        vm.prank(maarten);
+        santasList.collectPresent();
+        _;
+    }
+
+    modifier barbaraIsExtraNice() {
+        vm.startPrank(santa);
+        santasList.checkList(barbara, SantasList.Status.EXTRA_NICE);
+        santasList.checkTwice(barbara, SantasList.Status.EXTRA_NICE);
+        vm.stopPrank();
+        vm.warp(santasList.CHRISTMAS_2023_BLOCK_TIME() + 1);
+        vm.prank(barbara);
+        santasList.collectPresent();
         _;
     }
 
@@ -213,12 +227,41 @@ contract SantasListTest is Test {
         vm.stopPrank();
     }
 
-    function testMaartenCanMintHimselfAnNFTAtBabarasExpense() public maartenIsExtraNice {
-        assertEq(uint256(santasList.getNaughtyOrNiceTwice(maarten)), uint256(SantasList.Status.EXTRA_NICE));
-        vm.warp(santasList.CHRISTMAS_2023_BLOCK_TIME() + 1);
+    function testMaartenCanMintHimselfAnNFTAtBabarasExpense() public maartenIsExtraNice barbaraIsExtraNice {
+        assertEq(santasList.balanceOf(maarten), 1);
         // it's christmas and maarten is extra nice, but he will do
-        // an evil deed nontheless...
-        vm.deal(barbara, 2e18); // this does not seem to work
-        console2.log("barbara has: ", santaToken.balanceOf(barbara));
+        // an naughty deed nontheless...
+        console2.log("barbara starts off having: ", santaToken.balanceOf(barbara), " tokens");
+        // barbara starts off with 1 token...
+        assertEq(santaToken.balanceOf(barbara), 1e18);
+        // ... and maarten has 1 present
+        assertEq(santasList.balanceOf(maarten), 1);
+        vm.prank(maarten);
+        santasList.buyPresent(barbara);
+        console2.log("now barbara is left with: ", santaToken.balanceOf(barbara), " tokens");
+        // now barbara is left with 0 tokens and maarten has 2 presents
+        assertEq(santaToken.balanceOf(barbara), 0);
+        assertEq(santasList.balanceOf(maarten), 2);
+    }
+
+    function test_H1mitigationFixesBuyPresent() public maartenIsExtraNice barbaraIsExtraNice {
+        // for this test, temporarily implement the suggested fix.
+        assertEq(santasList.balanceOf(maarten), 1);
+
+        console2.log("barbara starts off having: ", santaToken.balanceOf(barbara), " tokens");
+        console2.log("maarten starts off having: ", santaToken.balanceOf(maarten), " tokens");
+        // barbara starts off with 1 token...
+        assertEq(santaToken.balanceOf(barbara), 1e18);
+        // ... and maarten has 1 present
+        assertEq(santasList.balanceOf(maarten), 1);
+        vm.prank(maarten);
+        santasList.buyPresent(barbara);
+        console2.log("now barbara is left with: ", santaToken.balanceOf(barbara), " tokens");
+        console2.log("now barbara is left with: ", santasList.balanceOf(barbara), " tokens");
+
+        assertEq(santaToken.balanceOf(barbara), 1e18);
+        assertEq(santasList.balanceOf(barbara), 2); // barbara now has 2
+        assertEq(santaToken.balanceOf(maarten), 0); // maarten spent his
+        assertEq(santasList.balanceOf(maarten), 1);
     }
 }
